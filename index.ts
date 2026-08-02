@@ -1,8 +1,30 @@
-import { Router, type IRouter } from "express";
-import healthRouter from "./health";
+import { parseCSVOrText, FileMeta } from './csvParser';
+import { parseExcel } from './excelParser';
+import { parseJSON } from './jsonParser';
+import { parseZIP } from './zipParser';
+import { parseSQL } from './sqlParser';
+import { parseXML } from './xmlParser';
 
-const router: IRouter = Router();
+export async function parseFile(
+  file: File,
+  fileId: number,
+  meta: FileMeta,
+  onProgress: (processedBytes: number, totalRecords: number) => void
+): Promise<number> {
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
 
-router.use(healthRouter);
-
-export default router;
+  if (ext === 'xlsx' || ext === 'xls') {
+    return await parseExcel(file, fileId, meta, onProgress);
+  } else if (ext === 'json') {
+    return await parseJSON(file, fileId, meta, onProgress);
+  } else if (ext === 'zip') {
+    return await parseZIP(file, fileId, meta, onProgress);
+  } else if (ext === 'sql') {
+    return await parseSQL(file, fileId, meta, onProgress);
+  } else if (ext === 'xml') {
+    return await parseXML(file, fileId, meta, onProgress);
+  } else {
+    // CSV, TXT, TSV, or any uncompressed binary/text stream fallback
+    return await parseCSVOrText(file, fileId, meta, onProgress);
+  }
+}
